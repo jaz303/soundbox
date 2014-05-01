@@ -1,5 +1,17 @@
 # soundbox
 
+Very simple audio sample playback manager, built on the Web Audio API.
+
+Currently supports sample loading over XHR and one-shot playback.
+
+## TODO
+
+  * Multiple tracks
+  * Background music
+  * Polyphony manager
+  * Cross-fading
+  * (wambar integration)
+
 ## Installation
 
 ### Browserify
