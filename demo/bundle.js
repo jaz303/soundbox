@@ -109,6 +109,10 @@ SoundBox.prototype.load = function(samples) {
 }
 
 SoundBox.prototype.playOneShot = function(id, opts) {
+    return this.play(id, opts);
+}
+
+SoundBox.prototype.play = function(id, opts) {
 
     var buffer = this.sounds[id];
     if (!buffer) {
@@ -118,28 +122,37 @@ SoundBox.prototype.playOneShot = function(id, opts) {
     opts = opts || EMPTY;
 
     var sourceNode  = this.ctx.createBufferSource(),
-        gainNode    = null;
+        gainNode    = this.ctx.createGain(),
+        stopped     = false;
 
     sourceNode.buffer = buffer;
+    sourceNode.connect(gainNode);
 
-    var gain = ('gain' in opts) ? opts.gain : 1;
-    if (gain != 1) {
-        gainNode = this.ctx.createGain();
-        gainNode.gain.value = gain;
-        sourceNode.connect(gainNode);
-        gainNode.connect(this.ctx.destination);
-    } else {
-        sourceNode.connect(this.ctx.destination);
-    }
+    var gainVal = ('gain' in opts) ? opts.gain : 1;
 
-    return P(function(resolve, reject) {
+    gainNode.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+    gainNode.connect(this.ctx.destination);
+
+    var promise = P(function(resolve, reject) {
         sourceNode.onended = function() {
             sourceNode.disconnect();
-            gainNode && gainNode.disconnect();
+            gainNode.disconnect();
             resolve();
         }
         sourceNode.start(0);
     });
+
+    promise.fadeOut = function() {
+        var endTime = this.ctx.currentTime + fadeDuration;
+        gain.gain.linearRampToValueAtTime(0, endTime);
+        sourceNode.stop(endTime);
+    }
+
+    promise.stop = function() {
+        sourceNode.stop(0);
+    }
+
+    return promise;
 
 }
 },{}]},{},[1])
