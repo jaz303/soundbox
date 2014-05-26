@@ -1,6 +1,6 @@
 module.exports = SoundBox;
 
-function P(fn) {
+var P = function(fn) {
     return new Promise(fn);
 }
 
@@ -15,6 +15,10 @@ function SoundBox(audioContext) {
     this.ctx = audioContext;
     this.sounds = {};
 
+}
+
+SoundBox.P = function(fn) {
+    P = fn;
 }
 
 SoundBox.prototype.load = function(samples) {
