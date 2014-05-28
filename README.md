@@ -6,11 +6,12 @@ Currently supports sample loading over XHR and one-shot playback.
 
 ## TODO
 
-  * Multiple tracks
-  * Background music
-  * Polyphony manager
-  * Cross-fading
-  * (wambar integration)
+  - [ ] Multiple tracks
+  - [ ] Track option: one active instance per ID
+  - [ ] Track option: max polyphony
+  - [ ] Backgorund track
+  - [ ] Fade out sfx
+  - [ ] Cross-fade/fade-out background track
 
 ## Installation
 
