@@ -6,9 +6,15 @@ Currently supports sample loading over XHR and one-shot playback.
 
 ## TODO
 
-  - [ ] Multiple tracks
+  - [x] Multiple tracks
   - [x] Track option: one active instance per ID
   - [x] Track option: max polyphony
+  - [ ] Master output per soundbox
+  - [ ] Soundbox mute
+  - [ ] Track mute
+  - [ ] Track cancel
+  - [ ] Track gain
+  - [ ] Named tracks
   - [ ] Background track
   - [ ] Fade out sfx
   - [ ] Cross-fade/fade-out background track

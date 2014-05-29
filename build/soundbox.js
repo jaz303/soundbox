@@ -6,8 +6,6 @@ var Track = _dereq_('./lib/Track');
 var P = function(fn) { return new Promise(fn); }
 var X = function() { return new XMLHttpRequest(); }
 
-var EMPTY = {};
-
 function SoundBox(audioContext) {
 
     if (!(this instanceof SoundBox)) {
@@ -16,7 +14,8 @@ function SoundBox(audioContext) {
 
     this.audioContext   = audioContext;
     this.sounds         = {};
-    this.defaultTrack   = new Track(this);
+    this.namedTracks    = {};
+    this.defaultTrack   = this.addTrack('default');
 
 }
 
@@ -78,8 +77,29 @@ SoundBox.prototype.load = function(samples) {
 
 }
 
-SoundBox.prototype.track = function(opts) {
-    return new Track(this, opts);
+SoundBox.prototype.getTrack = function(name) {
+    if (name in this.namedTracks) {
+        return this.namedTracks[name];
+    } else {
+        throw new Error("unknown track: " + name);
+    }
+}
+
+SoundBox.prototype.addTrack = function(name, opts) {
+    
+    if (typeof name === 'object') {
+        opts = name;
+        name = null;
+    }
+
+    var track = new Track(this, opts);
+
+    if (name) {
+        this.namedTracks[name] = track;
+    }
+
+    return track;
+
 }
 
 SoundBox.prototype.play = function(id, opts) {
@@ -106,6 +126,17 @@ var Track = module.exports = function(soundBox, opts) {
     this._exclusive     = opts.exclusive || false;
     this._playing       = [];
 
+    if (this._exclusive) {
+        this._playingIds = {};
+    }
+
+}
+
+Track.prototype.cancel = function() {
+
+    // TODO: need a nice way of zapping them all
+    
+    this._playing = [];
     if (this._exclusive) {
         this._playingIds = {};
     }
