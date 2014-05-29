@@ -7,9 +7,9 @@ Currently supports sample loading over XHR and one-shot playback.
 ## TODO
 
   - [ ] Multiple tracks
-  - [ ] Track option: one active instance per ID
-  - [ ] Track option: max polyphony
-  - [ ] Backgorund track
+  - [x] Track option: one active instance per ID
+  - [x] Track option: max polyphony
+  - [ ] Background track
   - [ ] Fade out sfx
   - [ ] Cross-fade/fade-out background track
 

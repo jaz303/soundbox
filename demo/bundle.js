@@ -42,9 +42,8 @@ window.init = function() {
 },{"../":2}],2:[function(require,module,exports){
 module.exports = SoundBox;
 
-function P(fn) {
-    return new Promise(fn);
-}
+var P = function(fn) { return new Promise(fn); }
+var X = function() { return new XMLHttpRequest(); }
 
 var EMPTY = {};
 
@@ -57,6 +56,15 @@ function SoundBox(audioContext) {
     this.ctx = audioContext;
     this.sounds = {};
 
+}
+
+SoundBox.configure = function(opts) {
+    if ('createPromise' in opts) {
+        P = opts.createPromise;
+    }
+    if ('createXMLHttpRequest' in opts) {
+        X = opts.createXMLHttpRequest;
+    }
 }
 
 SoundBox.prototype.load = function(samples) {
@@ -78,7 +86,7 @@ SoundBox.prototype.load = function(samples) {
         }
 
         function loadOne(id, sampleUrl) {
-            var xhr = new XMLHttpRequest();
+            var xhr = X();
             xhr.open('GET', sampleUrl);
             xhr.responseType = 'arraybuffer';
             xhr.onload = function() {
