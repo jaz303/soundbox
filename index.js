@@ -1,5 +1,7 @@
 module.exports = SoundBox;
 
+var Track = require('./lib/Track');
+
 var P = function(fn) { return new Promise(fn); }
 var X = function() { return new XMLHttpRequest(); }
 
@@ -11,8 +13,9 @@ function SoundBox(audioContext) {
         return new SoundBox(audioContext);
     }
 
-    this.ctx = audioContext;
-    this.sounds = {};
+    this.audioContext   = audioContext;
+    this.sounds         = {};
+    this.defaultTrack   = new Track(this);
 
 }
 
@@ -48,7 +51,7 @@ SoundBox.prototype.load = function(samples) {
             xhr.open('GET', sampleUrl);
             xhr.responseType = 'arraybuffer';
             xhr.onload = function() {
-                self.ctx.decodeAudioData(xhr.response, function(buffer) {
+                self.audioContext.decodeAudioData(xhr.response, function(buffer) {
                     if (!buffer) {
                         fail(new Error("error decoding audio data"));
                     } else {
@@ -74,50 +77,10 @@ SoundBox.prototype.load = function(samples) {
 
 }
 
-SoundBox.prototype.playOneShot = function(id, opts) {
-    return this.play(id, opts);
+SoundBox.prototype.track = function(opts) {
+    return new Track(this, opts);
 }
 
 SoundBox.prototype.play = function(id, opts) {
-
-    var buffer = this.sounds[id];
-    if (!buffer) {
-        throw new Error("unknown sound: " + id);
-    }
-
-    opts = opts || EMPTY;
-
-    var sourceNode  = this.ctx.createBufferSource(),
-        gainNode    = this.ctx.createGain(),
-        stopped     = false;
-
-    sourceNode.buffer = buffer;
-    sourceNode.connect(gainNode);
-
-    var gainVal = ('gain' in opts) ? opts.gain : 1;
-
-    gainNode.gain.setValueAtTime(gainVal, this.ctx.currentTime);
-    gainNode.connect(this.ctx.destination);
-
-    var promise = P(function(resolve, reject) {
-        sourceNode.onended = function() {
-            sourceNode.disconnect();
-            gainNode.disconnect();
-            resolve();
-        }
-        sourceNode.start(0);
-    });
-
-    promise.fadeOut = function() {
-        var endTime = this.ctx.currentTime + fadeDuration;
-        gain.gain.linearRampToValueAtTime(0, endTime);
-        sourceNode.stop(endTime);
-    }
-
-    promise.stop = function() {
-        sourceNode.stop(0);
-    }
-
-    return promise;
-
+    return this.defaultTrack.play(id, opts);
 }

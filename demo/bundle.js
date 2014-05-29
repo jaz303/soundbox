@@ -42,6 +42,8 @@ window.init = function() {
 },{"../":2}],2:[function(require,module,exports){
 module.exports = SoundBox;
 
+var Track = require('./lib/Track');
+
 var P = function(fn) { return new Promise(fn); }
 var X = function() { return new XMLHttpRequest(); }
 
@@ -53,8 +55,9 @@ function SoundBox(audioContext) {
         return new SoundBox(audioContext);
     }
 
-    this.ctx = audioContext;
-    this.sounds = {};
+    this.audioContext   = audioContext;
+    this.sounds         = {};
+    this.defaultTrack   = new Track(this);
 
 }
 
@@ -90,7 +93,7 @@ SoundBox.prototype.load = function(samples) {
             xhr.open('GET', sampleUrl);
             xhr.responseType = 'arraybuffer';
             xhr.onload = function() {
-                self.ctx.decodeAudioData(xhr.response, function(buffer) {
+                self.audioContext.decodeAudioData(xhr.response, function(buffer) {
                     if (!buffer) {
                         fail(new Error("error decoding audio data"));
                     } else {
@@ -116,51 +119,108 @@ SoundBox.prototype.load = function(samples) {
 
 }
 
-SoundBox.prototype.playOneShot = function(id, opts) {
-    return this.play(id, opts);
+SoundBox.prototype.track = function(opts) {
+    return new Track(this, opts);
 }
 
 SoundBox.prototype.play = function(id, opts) {
+    return this.defaultTrack.play(id, opts);
+}
 
-    var buffer = this.sounds[id];
-    if (!buffer) {
-        throw new Error("unknown sound: " + id);
-    }
+},{"./lib/Track":3}],3:[function(require,module,exports){
+var EMPTY = {};
 
+// promise.fadeOut = function() {
+//     var endTime = this.ctx.currentTime + fadeDuration;
+//     gain.gain.linearRampToValueAtTime(0, endTime);
+//     sourceNode.stop(endTime);
+// }
+
+var Track = module.exports = function(soundBox, opts) {
+    
     opts = opts || EMPTY;
 
-    var sourceNode  = this.ctx.createBufferSource(),
-        gainNode    = this.ctx.createGain(),
-        stopped     = false;
+    this._soundBox      = soundBox;
+    this._ctx           = soundBox.audioContext;
+    this._buffers       = soundBox.sounds;
+    this._maxPolyphony  = typeof opts.maxPolyphony === 'number' ? opts.maxPolyphony : null;
+    this._exclusive     = opts.exclusive || false;
+    this._playing       = [];
+
+    if (this._exclusive) {
+        this._playingIds = {};
+    }
+
+}
+
+Track.prototype.play = function(id, opts) {
+
+    var buffer = this._buffers[id];
+    if (!buffer) {
+        throw new Error("unknown sound ID: " + id);
+    }
+
+    if (this._maxPolyphony) {
+        while (this._playing.length >= this._maxPolyphony) {
+            this._playing.shift().cancel();
+        }
+    }
+
+    if (this._exclusive) {
+        if (id in this._playingIds) {
+            this._playingIds[id].cancel();
+        }
+    }
+
+    var opts        = opts || EMPTY,
+        ended       = false,
+        sourceNode  = this._ctx.createBufferSource(),
+        gainNode    = this._ctx.createGain(),
+        gain        = typeof opts.gain === 'number' ? opts.gain : 1,
+        resolve     = null,
+        instance    = P(function(res) { resolve = res; });
+
+    gainNode.gain.setValueAtTime(gain, this._ctx.currentTime);
+    gainNode.connect(this._ctx.destination);
 
     sourceNode.buffer = buffer;
     sourceNode.connect(gainNode);
-
-    var gainVal = ('gain' in opts) ? opts.gain : 1;
-
-    gainNode.gain.setValueAtTime(gainVal, this.ctx.currentTime);
-    gainNode.connect(this.ctx.destination);
-
-    var promise = P(function(resolve, reject) {
-        sourceNode.onended = function() {
-            sourceNode.disconnect();
-            gainNode.disconnect();
-            resolve();
-        }
-        sourceNode.start(0);
-    });
-
-    promise.fadeOut = function() {
-        var endTime = this.ctx.currentTime + fadeDuration;
-        gain.gain.linearRampToValueAtTime(0, endTime);
-        sourceNode.stop(endTime);
-    }
-
-    promise.stop = function() {
+ 
+    instance.cancel = function() {
+        if (ended) return;
         sourceNode.stop(0);
+        teardown();
     }
 
-    return promise;
+    var teardown = function() {
+        
+        if (ended) return;
+        ended = true;
+        
+        gainNode.disconnect();
+        sourceNode.disconnect();
+
+        this._playing.splice(this._playing.indexOf(instance), 1);
+
+        if (this._exclusive) {
+            delete this._playingIds[id];
+        }
+
+        resolve();
+
+    }.bind(this);
+
+    this._playing.push(instance);
+
+    if (this._exclusive) {
+        this._playingIds[id] = instance;
+    }
+
+    sourceNode.onended = teardown;
+    sourceNode.start(0);
+
+    return instance;
 
 }
+
 },{}]},{},[1])
