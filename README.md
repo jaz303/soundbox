@@ -11,9 +11,9 @@ Currently supports sample loading over XHR and one-shot playback.
   - [x] Track option: max polyphony
   - [ ] Master output per soundbox
   - [ ] Soundbox mute
-  - [ ] Track mute
+  - [x] Track mute
   - [ ] Track cancel
-  - [ ] Track gain
+  - [x] Track gain
   - [ ] Named tracks
   - [ ] Background track
   - [ ] Fade out sfx
