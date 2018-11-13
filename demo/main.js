@@ -1,7 +1,7 @@
 var soundbox = require('../');
 
 function createContext() {
-	var ctor = window.audioContext || window.webkitAudioContext;
+	var ctor = window.AudioContext || window.webkitAudioContext;
 	return new ctor();
 }
 
